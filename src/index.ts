@@ -1,13 +1,13 @@
-import Fastify from 'fastify';
-import awsLambdaFastify from '@fastify/aws-lambda';
-import root from './routes/root';
+import Fastify from "fastify";
+import awsLambdaFastify from "@fastify/aws-lambda";
+import { APIGatewayEvent, Context } from "aws-lambda";
+import root from "./routes/root";
 
-export const handler = async (event: any, context: any) => {
-  const fastify = Fastify();
+const fastify = Fastify();
+fastify.register(root);
 
-  await fastify.register(root);
+const lambdaHandler = awsLambdaFastify(fastify);
 
-  const lambdaHandler = awsLambdaFastify(fastify);
-  
+export const handler = async (event: APIGatewayEvent, context: Context) => {
   return lambdaHandler(event, context);
 };
