@@ -1,29 +1,40 @@
-import { FastifyPluginAsync } from 'fastify'
-import { DynamoDB } from "@aws-sdk/client-dynamodb";
+import { FastifyPluginAsync } from "fastify";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  PutCommandInput,
+} from "@aws-sdk/lib-dynamodb";
+import { generateRandomId, generateProductId, dynamoConfig } from "../utils";
+import { Product } from "../models/productInterfaces";
 
-const dynamodb = new DynamoDB({ apiVersion: '2011-12-05' });
+const client = new DynamoDBClient(dynamoConfig());
+const dynamodb = DynamoDBDocumentClient.from(client);
 
-const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const root: FastifyPluginAsync = async (fastify): Promise<void> => {
+  fastify.post("/", async (request, reply) => {
+    const body: Product = request.body as Product;
 
+    try {
+      const params: PutCommandInput = {
+        Item: {
+          id: generateRandomId(),
+          productId: generateProductId(),
+          ...body,
+        },
+        TableName: process.env.TABLE_NAME,
+      };
 
+      const data = await dynamodb.send(new PutCommand(params));
 
-  fastify.post('/', async function (request, reply) {
-
-    console.log("request: ", request)
-
-    const params: any = {
-      Item: {
-        "id": { S: "$#@$fefsdafsdfdsa" },
-        "name": { S: "Patis" },
-        "price": { N: "20" }
-      },
-      TableName: "arl-products"
-    };
-
-    const data = await dynamodb.putItem(params);
-
-    return { root: data }
-  })
-}
+      reply.status(200).send({ response: data });
+    } catch (error) {
+      fastify.log.error(error);
+      reply
+        .status(500)
+        .send({ error: "An error occurred while processing your request." });
+    }
+  });
+};
 
 export default root;
