@@ -68,3 +68,9 @@ dist
 template.yaml
 samconfig.yaml
 samconfig.toml
+
+
+#auth
+auth.json
+.env
+.aws-sam
